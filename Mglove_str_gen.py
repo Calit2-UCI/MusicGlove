@@ -30,8 +30,6 @@ GRIP_4 = 'Purple Grip'
 GRIP_5 = 'Yellow Grip'
 '''
 
-''' “Your response time is improving!”
-    “Your overall response time has gotten much better!”'''
 POSITIVE_STRING = [
     [
         "YOU'RE DOING WELL, BUT I KNOW YOU CAN DO BETTER.",
@@ -53,8 +51,7 @@ POSITIVE_STRING = [
     ],
 ]
 
-''' "What’s going on?! You’re starting to slow down!”
-    “You’re starting to slow down. Get your head in the game!”'''
+
 NEGATIVE_STRING = [
     [
         "NOT BAD, BUT I'M SURE YOU'LL DO BETTER ON THE NEXT SET.",

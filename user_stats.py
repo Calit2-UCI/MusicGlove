@@ -10,12 +10,11 @@ __author__ = 'Nathan'
 
 from Interface import gather_info, parse_csv, abs_val_list
 from collections import namedtuple
-import statistics
 
 Difference = namedtuple('Difference', 'red blue green purple yellow')
 
 class User_Stats:
-    def __init__(self, neg_quart=25, pos_quart=25, new_song=True):
+    def __init__(self, neg_quart=25, pos_quart=25, new_song=False):
         self.negative_quartile_range = neg_quart
         self.positive_quartile_range = pos_quart
         self._old_red_avg = 0

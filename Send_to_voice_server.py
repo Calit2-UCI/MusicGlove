@@ -6,8 +6,8 @@ __author__ = 'Nathan'
 
 
 ### RIVA log file
-RIVA_LOG = "D:\\RIVA\\musicglove_1366x768\\resources\\saves\\temp\\RIVA_log.txt"
-NO_VOICE_LOG = "D:\\RIVA\\musicglove_1366x768\\resources\\saves\\temp\\NORIVA_log.txt"         # (local computer)
+RIVA_LOG = "C:\\Users\\Nathan\\Desktop\\Calit2Dev\\MG\\musicglove_1366x768\\resources\\saves\\temp\\RIVA_log.txt"
+NO_VOICE_LOG = "C:\\Users\\Nathan\\Desktop\\Calit2Dev\\MG\\musicglove_1366x768\\resources\\saves\\temp\\NORIVA_log.txt"         # (local computer)
 
 
 def reset_RIVA_log():
@@ -27,7 +27,7 @@ def text_to_RIVA(*args):
         else:
             RIVA_message += ";" + msg
     print(RIVA_message)
-    with open(RIVA_LOG, 'w', newline= '\n') as outfile:
+    with open(RIVA_LOG, 'w') as outfile:
         outfile.write(RIVA_message)
 
 
@@ -35,7 +35,7 @@ def to_no_voice_log(message):
     """ Takes a message string, then sends it to Musicglove's logfile
     """
     #print("entering to_no_voice_log")
-    with open(NO_VOICE_LOG, 'w', newline= '\n') as outfile:
+    with open(NO_VOICE_LOG, 'w') as outfile:
         outfile.write(message)
         #print(message)
 
