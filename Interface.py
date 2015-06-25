@@ -4,14 +4,13 @@ __editor__ = 'Jessica'
 # Written in Python 3.3.3 (added statistics and pydub modules)
 
 ###Jessica Zeng, UCI, Cali2, CalPlug, 2015-May
-# Edited in Python 2.7
+# Edited to Python 2.7
 
 ### The MusicGlove interface: evaluates a csv file's data and converts that data into statistics telling how well the
 ###    user is preforming, then returns a string giving encouragement and advice.
 
 '''
 currently when incorrect input is done 'nan' is being interpreted as 300 (the maximum late grip)
-    -how much should nan be worth, compared to a slow response?
 '''
 
 
@@ -42,8 +41,7 @@ def parse_csv(infile):
 
 def average_grip_time(grip_stats):
     """take grip_stas:[Stat] -> float
-        Sums the total time for a given grip,
-        then returns average reaction time"""
+        Sums the total time for a given grip, then returns average reaction time"""
     #print("entering average_grip_time")
     if grip_stats == []:
         return 0
@@ -55,11 +53,34 @@ def average_grip_time(grip_stats):
     average_grip_time = (time/len(grip_stats))
     return average_grip_time
 
+
+def total_grip_time(grip_stats):
+    """ Take grip_stats: [Stat] -> float"""
+    if grip_stats == []:
+        return 0
+    time = 0
+    for stat in grip_stats:
+        time += stat.difference
+    if len(grip_stats) == 0:
+        return 0
+    return time
+
 def gather_info(stat_list) :
     """take stat_list:[Stat] -> [float]
-    Use the stats to evaluate user performance, then determine what
-       correction needs to be taken"""
+    Use the stats to evaluate user performance, then determine what correction needs to be taken"""
     #print("entering gather_info")
+    return [average_grip_time(i) for i in _produce_grip_stat_list(stat_list)]
+
+
+def gather_early_late(stat_list):
+    """take a stat_list:[Stat] -> [float]
+    return how early/late a user was for each grip"""
+    return [total_grip_time(i) for i in _produce_grip_stat_list(stat_list)]
+
+
+def _produce_grip_stat_list(stat_list):
+    """take stat_list:[Stat] -> [[Stat]]
+    Sort the stat_list by grip, returning five lists"""
     #error_list = []                            # Not currently checking for errors
     grip_1_list = []
     grip_2_list = []
@@ -79,13 +100,8 @@ def gather_info(stat_list) :
             grip_4_list.append(stat)
         elif stat.expected == 5:
             grip_5_list.append(stat)
+    return [grip_1_list,grip_2_list, grip_3_list, grip_4_list, grip_5_list]
 
-    grip_1_avg =  average_grip_time(grip_1_list)
-    grip_2_avg = average_grip_time(grip_2_list)
-    grip_3_avg = average_grip_time(grip_3_list)
-    grip_4_avg = average_grip_time(grip_4_list)
-    grip_5_avg = average_grip_time(grip_5_list)
-    return [grip_1_avg, grip_2_avg, grip_3_avg, grip_4_avg, grip_5_avg]
 
 def grip_times(stat_list):
     """ stat_list:[stat]->[float]

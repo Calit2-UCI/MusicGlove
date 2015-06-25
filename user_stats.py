@@ -29,6 +29,11 @@ class User_Stats:
         self._purple_avg = 0
         self._yellow_avg = 0
         self._overall_avg = 0
+        self._red_late = 0
+        self._blue_late = 0
+        self._green_late = 0
+        self._purple_late = 0
+        self._yellow_late = 0
         self._difference = Difference(0,0,0,0,0)
         self._followup = None        # The grip which the user was last assigned to concentrate on.
         if new_song == True:
@@ -65,6 +70,21 @@ class User_Stats:
         self._yellow_avg = grips[4]
         self.set_difference()
         self.set_overall_avg()
+
+
+    def set_early_late(self, grips):
+        """ Takes a list grip times and uses them to set the current grips early/late time."""
+        self._red_late = grips[0]
+        self._blue_late = grips[1]
+        self._green_late = grips[2]
+        self._purple_late = grips[3]
+        self._yellow_late = grips[4]
+
+
+    def get_early_late(self):
+        """ Gets early/late grips returns a list of five grip times"""
+        return [self._red_late, self._blue_late, self._green_late, self._purple_late, self._yellow_late]
+
 
     def get_grip_avg(self, grip_number=0, grip=None, old=False):
         """ Takes an int (1-5), or a string ('worst' or 'best'), representing a grip and returns that grip's average"""

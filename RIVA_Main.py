@@ -58,25 +58,25 @@ class MusicGloveSong:
         raw_input("Press Enter to Proceed")
         pass
 
-    
+
     def _check_completion(self):
-        """ waits 7 seconds then check if lastline matches past iteration's lastline
+        """ waits 10 seconds then check if lastline matches past iteration's lastline
         """
         sleep(SONG_OVER_CHECK_TIME)        ###Wait 10 seconds
-        print("entering _check_completion")
+        #print("entering _check_completion")
         csv_lastline = self._read_lastline()
-        print('system time = {}'.format(strftime("%H:%M:%S")))
-        print("csv_lastline = ", csv_lastline)
-        print("self._last_line = ", self._last_line)
+        #print('system time = {}'.format(strftime("%H:%M:%S")))
+        #print("csv_lastline = ", csv_lastline)
+        #print("self._last_line = ", self._last_line)
         if csv_lastline == self._last_line or csv_lastline == "Empty File":
             self._song_over = True
             print("Song Over")
         else:
             self._last_line = csv_lastline
             self._song_over = False
-        print("Song Over = ", self._song_over)
-        print('system time = {}'.format(strftime("%H:%M:%S")))
-        print("self._last_line = ", self._last_line)
+        #print("Song Over = ", self._song_over)
+        #print('system time = {}'.format(strftime("%H:%M:%S")))
+        #print("self._last_line = ", self._last_line)
         return
 
     def _summarize_period(self):
@@ -97,15 +97,12 @@ class MusicGloveSong:
         #print("entering set_last_30")
         grip_list = read_csv(CSV_functions.MUSICGLOVE, test=True)
         self._all_grips = parse_csv(grip_list)
-        #print("grip_list = ", grip_list)
         if self._grip_count == 0:
             self._grip_count = len(grip_list)
         else:
             for j in range(self._grip_count):
-                #print("j = {} and grip_list = {}".format(j, len(grip_list)))
                 grip_list.remove(grip_list[0])
             self._grip_count += len(grip_list)
-            #self._all_grips += parse_csv(read_csv(CSV_functions.MUSICGLOVE))
         self._last_30_sec = grip_list
         return
 
@@ -113,7 +110,6 @@ class MusicGloveSong:
         """ Returns the last line of the csv containing the user's grip information
         """
         #print("entering _read_lastline()")
-        #print(read_csv(CSV_functions.MUSICGLOVE))
         try:
             last_line = parse_csv(read_csv(CSV_functions.MUSICGLOVE))[-1]
         except IndexError:
@@ -202,8 +198,6 @@ class MusicGloveSong:
         else:# self._feedback_plat == "Text":
             self._RIVA_message_num += 1
             to_no_voice_log("NewData:{};TTS:{}".format(self._RIVA_message_num, msg))
-        ###else:
-        ###    text_to_ispeech(ispeech_formatter(msg))
         while True:
             self._check_completion()
             if self._song_over is False:
@@ -219,8 +213,6 @@ class MusicGloveSong:
                 if self._song_over is True:
                     interface_info = gather_info(
                         parse_csv(read_csv(CSV_functions.MUSICGLOVE)))
-                    #print(interface_info)
-                    #print("Song_over min/max = ", min_max)
                     self.user_stats.set_grips(interface_info)
                     self._compile_result(grip_avg_summary_str(interface_info))
                     evaluated_info = [evaluate_worst_grip(interface_info, self._last_worst_grip),
@@ -232,8 +224,6 @@ class MusicGloveSong:
                         text_to_RIVA(summary)
                     else:# self._feedback_plat == "Text":
                         to_no_voice_log(emo_less_feedback(self._RIVA_message_num, evaluated_info[0], evaluated_info[1]))
-                    ###else:
-                    ###    text_to_ispeech(ispeech_formatter(summary))
                     self._last_30_sec = []
                     self._compile_result(summary)
                     self._csv_result.extend(read_csv(CSV_functions.MUSICGLOVE))
@@ -247,7 +237,7 @@ class MusicGloveSong:
     def execute_song(self):
         """ organizes methods, and runs a song
         """
-        print("entering execute_song()")
+        #print("entering execute_song()")
         while self._song_over is False:
             self._summarize_period()
             grip_info = gather_info(parse_csv(self._last_30_sec))
@@ -268,10 +258,7 @@ class MusicGloveSong:
             else:#if self._feedback_plat == "Text":
                 self._RIVA_message_num += 1
                 to_no_voice_log(emo_less_feedback(self._RIVA_message_num, self._last_worst_grip, best_grip))
-            ###else:
-            ###    self._RIVA_message_num += 1
-            ###    text_to_ispeech(ispeech_formatter(summary))
-        print("leaving execute_song()")
+        #print("leaving execute_song()")
         return
 
 
