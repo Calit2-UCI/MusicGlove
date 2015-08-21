@@ -12,12 +12,14 @@ __author__ = 'Nathan'
 #                       MAIN                         #
 #                                                    #
 ######################################################
+import sys
+sys.path.append("D:\RIVA\Smartbody\data\MusicGlove")
 
 import CSV_functions
 import Mglove_str_gen
 from CSV_functions import read_csv, make_csv
 from Interface import gather_info, parse_csv, evaluate_worst_grip, evaluate_best_grip, what_song, \
-    grip_times, abs_val_list
+    grip_times, abs_val_list, gather_early_late
 from Mglove_str_gen import grip_avg_summary_str, summary_generator, emo_less_feedback
 from Send_to_voice_server import reset_RIVA_log, text_to_RIVA, to_no_voice_log
 from time import sleep, strftime
@@ -27,7 +29,7 @@ from user_stats import User_Stats
     -Fix selector to prioritize training prompts
 '''
 SONG_OVER_CHECK_TIME = 10
-TIME_BETWEEN_FEEDBACK = 30        # Must be a multiple of SONG_OVER_CHECK_TIME
+TIME_BETWEEN_FEEDBACK = 20        # Must be a multiple of SONG_OVER_CHECK_TIME
 
 
 class MusicGloveSong:
@@ -44,46 +46,36 @@ class MusicGloveSong:
         self. _last_response = ''
         self. _all_grips = []
         self.user_stats = 'null'
+        self.first_song = True
         # tells RIVA which side of it's screen the Musicglove screen is on
         self._RIVA_focus_direction = 'right'
         self.user_name = user   # input("Please enter user name: ")
         if restart == True:
-            self.user_stats = User_Stats(neg_quart=25, pos_quart=30, new_song=False)
+            self.user_stats = User_Stats(neg_quart=20, pos_quart=30, new_song=False)
         else:
-            self.user_stats = User_Stats(neg_quart=25, pos_quart=30, new_song=False)
-            #self.user_stats = User_Stats()
-        pass
-
-    def _go(self):
-        raw_input("Press Enter to Proceed")
+            self.user_stats = User_Stats(neg_quart=20, pos_quart=30, new_song=False) #self.user_stats = User_Stats()
         pass
 
 
     def _check_completion(self):
-        """ waits 10 seconds then check if lastline matches past iteration's lastline
+        """ Waits 10 seconds then check if lastline matches past iteration's lastline
         """
         sleep(SONG_OVER_CHECK_TIME)        ###Wait 10 seconds
         #print("entering _check_completion")
         csv_lastline = self._read_lastline()
-        #print('system time = {}'.format(strftime("%H:%M:%S")))
-        #print("csv_lastline = ", csv_lastline)
-        #print("self._last_line = ", self._last_line)
         if csv_lastline == self._last_line or csv_lastline == "Empty File":
             self._song_over = True
             print("Song Over")
         else:
             self._last_line = csv_lastline
             self._song_over = False
-        #print("Song Over = ", self._song_over)
-        #print('system time = {}'.format(strftime("%H:%M:%S")))
-        #print("self._last_line = ", self._last_line)
         return
 
     def _summarize_period(self):
         """ Call time_5_sec() 6 times, if the song ends return immediately,
             otherwise return once iterations are complete.
         """
-        print("entering _summarize_period()")
+        #print("entering _summarize_period()")
         for i in range(TIME_BETWEEN_FEEDBACK // SONG_OVER_CHECK_TIME):    ### Wait 30 seconds
             self._check_completion()
             if self._song_over is True:
@@ -125,25 +117,26 @@ class MusicGloveSong:
         return
 
     def select_response(self):
-        """ Chooses an appropriate response based upon user's performance. Returns a
-        2-tuple where the first element is the string type of response and the second is that appropriate response string"""
+        """ Chooses an appropriate response based upon user's performance. Returns a 2-tuple where the first element is
+            the string type of response and the second is that appropriate response string"""
         print("RIVA msg number: ", self._RIVA_message_num)
         overall_avg = self.user_stats.new_overall_avg()
         scale_points = self.user_stats.get_scale_points(abs_val_list(grip_times(self._all_grips)))
-        #print("overall avg: {}\n scale point 1: {} scale point 2: {}".format(overall_avg,scale_points[1],scale_points[2]))
         # if self._RIVA_message_num == 1:
         #     return self.response_welcome()
+        early_late = self.user_stats.get_early_late()
+        print(early_late)
         if self._last_response == "training_prompt":
             return self.response_training_response()
             '''elif self.user_stats.get_grip_avg(grip_number=self._last_worst_grip) > \
                      self.user_stats.get_scale_points(abs_val_list(grip_times(self._all_grips)))[2]:
                 return self.response_training_prompt()
             '''
+        elif early_late < -.5 or early_late > .5:
+            return self.response_early_late(early_late)
         elif overall_avg > scale_points[2]:
-            #print("Q2", scale_points[2])
             return self.response_negative()
         elif overall_avg < scale_points[1]:
-            #print("Q1", scale_points[1])
             return self.response_positive()
         return self.response_training_prompt()
 
@@ -153,7 +146,6 @@ class MusicGloveSong:
         """
         self._last_response = "Welcome"
         self._last_worst_grip = 0
-        ### return "Alright " + self.user_name + ", are you ready to really get started!?"
         return "Welcome_str"
 
     def response_training_response(self):
@@ -164,6 +156,10 @@ class MusicGloveSong:
             self.user_stats.get_grip_avg(grip_number=self.user_stats.get_followup()))
         self._last_response = training_response[0]
         return training_response[1]
+
+    def response_early_late(self, early_late_time):
+        return Mglove_str_gen.early_late_response(early_late_time)
+
 
     def response_training_prompt(self):
         """ Analyzes user's last 30 seconds, returns string prompt suggesting a grip to work on (the worst grip)"""
@@ -176,14 +172,12 @@ class MusicGloveSong:
         """ Returns a scaled string telling the user they need to improve their overall reaction time"""
         print("Negative Response")
         self._last_response = "negative_response"
-        #print("scale = ", self.user_stats.find_worst_grip_scale(grip_times(self._all_grips)))
         return Mglove_str_gen.negative_response(self.user_stats.find_worst_grip_scale(grip_times(self._all_grips)))
 
     def response_positive(self):
         """ Returns a scaled string telling the user that their overall reaction time is good/great"""
         self._last_response = "positive_response"
         print("Positive Response")
-        #print("scale =", self.user_stats.find_best_grip_scale(grip_times(self._all_grips)))
         return Mglove_str_gen.positive_response(self.user_stats.find_best_grip_scale(grip_times(self._all_grips)))
 
     def test_for_restart(self):
@@ -191,13 +185,12 @@ class MusicGloveSong:
         """
         #print("entering test_for_restart()")
         self._compile_result("UserName: " + self.user_name)
-        msg = "Welcome_str"
         if self._feedback_plat == "RIVA":
             self._RIVA_message_num += 1
-            text_to_RIVA(msg)
+            text_to_RIVA("Welcome_str")
         else:# self._feedback_plat == "Text":
             self._RIVA_message_num += 1
-            to_no_voice_log("NewData:{};TTS:{}".format(self._RIVA_message_num, msg))
+            to_no_voice_log("NewData:{};".format(self._RIVA_message_num))
         while True:
             self._check_completion()
             if self._song_over is False:
@@ -205,7 +198,7 @@ class MusicGloveSong:
                 if self._feedback_plat == "RIVA":
                     reset_RIVA_log()
                     self._RIVA_message_num += 1
-                    text_to_RIVA(self.response_welcome())
+                    #text_to_RIVA(self.response_welcome())
                 elif self._feedback_plat == "Text":
                     to_no_voice_log((emo_less_feedback(0, 0, 0)))
                 self.execute_song()
@@ -214,13 +207,13 @@ class MusicGloveSong:
                     interface_info = gather_info(
                         parse_csv(read_csv(CSV_functions.MUSICGLOVE)))
                     self.user_stats.set_grips(interface_info)
+                    self.user_stats.set_early_late(gather_early_late(parse_csv(read_csv(CSV_functions.MUSICGLOVE))))
                     self._compile_result(grip_avg_summary_str(interface_info))
                     evaluated_info = [evaluate_worst_grip(interface_info, self._last_worst_grip),
                                       evaluate_best_grip(interface_info)]
                     summary = summary_generator(evaluated_info[0], evaluated_info[1])
                     if self._feedback_plat == "RIVA":
                         self._RIVA_message_num += 1
-                        #print("message_num={} summary={}".format(self._message_num, summary))
                         text_to_RIVA(summary)
                     else:# self._feedback_plat == "Text":
                         to_no_voice_log(emo_less_feedback(self._RIVA_message_num, evaluated_info[0], evaluated_info[1]))
@@ -242,6 +235,7 @@ class MusicGloveSong:
             self._summarize_period()
             grip_info = gather_info(parse_csv(self._last_30_sec))
             self.user_stats.set_grips(grip_info)
+            self.user_stats.set_early_late(gather_early_late(parse_csv(read_csv(CSV_functions.MUSICGLOVE))))
             best_grip = evaluate_best_grip(grip_info)
             self._compile_result(grip_avg_summary_str(grip_info))
             self._last_worst_grip = evaluate_worst_grip(grip_info, self._last_worst_grip)
@@ -250,7 +244,6 @@ class MusicGloveSong:
             self._compile_result('system time = {}'.format(strftime("%H:%M:%S")))
             self._compile_result(' ')
             if self._song_over is True:
-                # print('Number of grips this song = ', self._grip_count)
                 return
             if self._feedback_plat == "RIVA":
                 self._RIVA_message_num += 1
@@ -258,10 +251,10 @@ class MusicGloveSong:
             else:#if self._feedback_plat == "Text":
                 self._RIVA_message_num += 1
                 to_no_voice_log(emo_less_feedback(self._RIVA_message_num, self._last_worst_grip, best_grip))
-        #print("leaving execute_song()")
         return
 
 
 if __name__ == "__main__":
     reset_RIVA_log()
-    MusicGloveSong('Demo')        #MusicGloveSong(user=raw_input("Please enter user name: ")).test_for_restart()
+    raw_input("Press Enter to Proceed")
+    MusicGloveSong('Demo').test_for_restart()        #MusicGloveSong(user=raw_input("Please enter user name: ")).test_for_restart()

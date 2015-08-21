@@ -61,7 +61,7 @@ NEGATIVE_STRING = [
     ],
     [
         "YEAH, THAT LAST SET WAS A BIT OF A TOUGH ONE, LET'S GIVE IT ANOTHER GO.",
-        "A BIT SLOW ON THAT LAST SET, BUT WE'RE GETTING BETTER.",
+        "",
         "JUST A BRIEF HICCUP ON THAT LAST ONE, BUT NOTHING TO WORRY ABOUT, I SHOULD THINK.",
         "THAT LAST SET COULD HAVE GONE A LITTLE BETTER, BUT THAT'S ALRIGHT, WE'LL GET IT NEXT TIME!"
     ],
@@ -84,7 +84,7 @@ TRAINING_PROMPT_LIST = [
     "You are doing great, but I think we ought to focus on the {Grip} for the next little bit!",
     "On this next set, try focusing on the {Grip}!",
     "I noticed that you were having a little trouble with the {Grip}! Let's work on that one.",
-    "Overall, that was a great playthrough, but I noticed you were having trouble with the {Grip}. Why don't we focus on that one for the next few measures?",
+    "Overall, you are doing great, but I noticed you were having trouble with the {Grip}. Why don't we focus on that one for the next few measures?",
     "Great work. We could still do a little more work on the {Grip} though. So Let's try and focus on that for a little bit."
 ]
 
@@ -125,6 +125,23 @@ BEST_GRIP_STR_LIST = [
     "But, you are doing great with the"
 ]
 
+
+LATE_STR_LIST = [
+    "IT SEEMED LIKE YOU WERE A BIT SLOW ON THAT LAST SET.",
+    "I NOTICED THAT YOUR RESPONSE TIMES WERE A LITTLE LATE",
+    "YOU ARE A LITTLE SLOW, TRY SPEEDING UP JUST A BIT",
+    "WHY DON'T YOU TRY HITTING THE NOTES A LITTLE BIT SOONER"
+]
+
+
+EARLY_STR_LIST = [
+    "SLOW DOWN A BIT YOU ARE HITTING THE NOTES TOO EARLY",
+    "SEEMS LIKE YOU ARE JUMPING THE GUN, TRY SLOWING DOWN",
+    "YOUR RESPONSE TIMES ARE A LITTLE EARLY, WAIT A LITTLE BIT BEFORE THE NOTE",
+    "TRY WAITING A LITTLE LONGER BEFORE HITTING THE NOTE"
+]
+
+
 def training_response(last_worst_grip, old_grip_avg, new_grip_avg):
     """ last_worst_grip: int, old_grip_avg: float, new_grip_avg: float
         Takes the worst grip, it's average, and it's average last session. Checks for improvement, then returns a
@@ -134,37 +151,51 @@ def training_response(last_worst_grip, old_grip_avg, new_grip_avg):
         pass failure/success to select_response() function
     """
     if old_grip_avg < new_grip_avg:
-        return ("training_prompt",
-                "NEG_TRAINING_RESPONSE_{}_{}".format(randrange(len(NEG_TRAINING_RESPONSE)),grip_selector(last_worst_grip)))
-    return ("training_response",
+        response = ("training_prompt",
+                "NEG_TRAINING_RESPONSE_{}_{}".format(randrange(len(NEG_TRAINING_RESPONSE)),
+                                                     grip_selector(last_worst_grip)))
+        return response
+    response = ("training_response",
             "POS_TRAINING_RESPONSE_{}_{}".format(randrange(len(POS_TRAINING_RESPONSE)),
                                                  grip_selector(last_worst_grip)))
+    return response
 
 def negative_response(scale):
     """ scale: int
         Returns a scaled negative response
     """
-    # return NEGATIVE_STRING[scale-1][randrange(len(NEGATIVE_STRING[scale-1]))]
-    return "NEGATIVE_STRING_{}_{}".format((scale-1),randrange(len(NEGATIVE_STRING[scale-1])))
+    response = "NEGATIVE_STRING_{}_{}".format((scale-1),randrange(len(NEGATIVE_STRING[scale-1])))
+    return response
 
 
 def positive_response(scale):
     """ scale: int
         Returns a scaled positive response
     """
-    # return POSITIVE_STRING[scale-1][randrange(len(POSITIVE_STRING[scale-1]))]
-    return "POSITIVE_STRING_{}_{}".format((scale-1),randrange(len(POSITIVE_STRING[scale-1])))
+    response = "POSITIVE_STRING_{}_{}".format((scale-1),randrange(len(POSITIVE_STRING[scale-1])))
+    return response
 
 
 def training_prompt(last_worst_grip):
     """ last_worst_grip: int
         Takes a worst grip and provides a string prompting user to improve that grip
     """
-    # prompt = TRAINING_PROMPT_LIST[randrange(len(TRAINING_PROMPT_LIST))].format(Grip = grip_selector(last_worst_grip))
-    # print(prompt)
     prompt = "TRAINING_PROMPT_LIST_{}_{}".format(randrange(len(TRAINING_PROMPT_LIST)),
                                                  grip_selector(last_worst_grip))
     return prompt
+
+
+def early_late_response(avg_grip_time):
+    """
+        :param avg_grip_time: float
+        Takes a user's average grip time and returns a response dependant upon whether they are early or late
+    """
+    if avg_grip_time < 0:
+        response = "EARLY_STR_LIST_{}".format(randrange(len(EARLY_STR_LIST)))
+        return response
+    else:
+        response = "LATE_STR_LIST_{}".format(randrange(len(LATE_STR_LIST)))
+        return response
 
 
 def grip_avg_summary_str(grip_avg_list):

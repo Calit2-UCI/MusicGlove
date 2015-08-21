@@ -33,7 +33,6 @@ def parse_csv(infile):
                 continue
             if temp_stat[2] == 'nan': #Keep it from throwing errors because 'nan' is not a float
                 temp_stat[2] = -300 # A missed grip will count 50% more than the maximum late/early grip
-            #print(temp_stat[0],temp_stat[1],temp_stat[2])
             stat_list.append(Stat(int(temp_stat[0]), int(temp_stat[1]), float(temp_stat[2])))
         except IndexError:
             pass
@@ -63,9 +62,11 @@ def total_grip_time(grip_stats):
         time += stat.difference
     if len(grip_stats) == 0:
         return 0
-    return time
+    average_grip_time = (time/len(grip_stats))
+    return average_grip_time
 
-def gather_info(stat_list) :
+
+def gather_info(stat_list):
     """take stat_list:[Stat] -> [float]
     Use the stats to evaluate user performance, then determine what correction needs to be taken"""
     #print("entering gather_info")
@@ -74,8 +75,16 @@ def gather_info(stat_list) :
 
 def gather_early_late(stat_list):
     """take a stat_list:[Stat] -> [float]
-    return how early/late a user was for each grip"""
-    return [total_grip_time(i) for i in _produce_grip_stat_list(stat_list)]
+    return how early/late a user was, on average, for each grip"""
+    result = [total_grip_time(i) for i in _produce_grip_stat_list(stat_list)]
+    result += [calc_trend(stat_list)]
+    return result
+
+
+def calc_trend(stat_list):
+    avg_response_time = average_grip_time(stat_list)
+    avg_trend = total_grip_time(stat_list)
+    return (avg_trend/avg_response_time)
 
 
 def _produce_grip_stat_list(stat_list):
@@ -151,7 +160,6 @@ def evaluate_best_grip(grip_times):
         if current > time:
             current = time
             best_grip = i
-            #print("best grip =", best_grip)
     return best_grip
 
 def what_song(grips):
@@ -170,7 +178,6 @@ def what_song(grips):
              "Nothing to Worry About" : 541,}
     for key, value in SONGS.items():
         if value-5 < grips < value+5:
-            #print(key)
             return "Song Played: " + key + '\n'
     return "Unrecognized Song\n"
 

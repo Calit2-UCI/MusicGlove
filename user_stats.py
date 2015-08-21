@@ -13,6 +13,7 @@ from collections import namedtuple
 
 Difference = namedtuple('Difference', 'red blue green purple yellow')
 
+
 class User_Stats:
     def __init__(self, neg_quart=25, pos_quart=25, new_song=False):
         self.negative_quartile_range = neg_quart
@@ -34,6 +35,7 @@ class User_Stats:
         self._green_late = 0
         self._purple_late = 0
         self._yellow_late = 0
+        self._late_avg = 0           # The sum of all responses divided by the number of responses
         self._difference = Difference(0,0,0,0,0)
         self._followup = None        # The grip which the user was last assigned to concentrate on.
         if new_song == True:
@@ -53,7 +55,7 @@ class User_Stats:
     def positive_quartile_range(self):
         return self.positive_quartile_range
 
-    def set_grips(self, grips) :
+    def set_grips(self, grips):
         """ Updates old grips to those from the last call,
                 and sets the new grip averages to match those since the last call.
         """
@@ -73,17 +75,28 @@ class User_Stats:
 
 
     def set_early_late(self, grips):
-        """ Takes a list grip times and uses them to set the current grips early/late time."""
+        """Takes a list of grip times and uses them to set the current grips early/late time."""
         self._red_late = grips[0]
         self._blue_late = grips[1]
         self._green_late = grips[2]
         self._purple_late = grips[3]
         self._yellow_late = grips[4]
+        self._late_avg = grips[5]
 
 
     def get_early_late(self):
         """ Gets early/late grips returns a list of five grip times"""
-        return [self._red_late, self._blue_late, self._green_late, self._purple_late, self._yellow_late]
+        #return [self._red_late, self._blue_late, self._green_late, self._purple_late, self._yellow_late]
+        return self._late_avg
+
+    def equation(self, minVal, maxVal, gripAvg):
+        """
+        :param min: Double
+        :param max: Double
+        :param gripAvg: Double
+        :return:
+        """
+        totalRange = abs(minVal) + abs(maxVal)
 
 
     def get_grip_avg(self, grip_number=0, grip=None, old=False):
@@ -94,11 +107,8 @@ class User_Stats:
             avgs = [self._old_red_avg, self._old_blue_avg, self._old_green_avg,
                     self._old_purple_avg, self._old_yellow_avg]
         if grip_number != 0:
-            #print("grip_number = ", grip_number)
             for i in range(5):
                 if i == grip_number-1:
-                    #print("grip_number = ", grip_number)
-                    #print("avgs[{}] = {}".format(i+1,avgs[i]))
                     return avgs[i]
         elif grip == "best":
             return min(avgs)
@@ -119,7 +129,6 @@ class User_Stats:
         #print("entering set_overall_avg")
         self._old_overall_avg = self._overall_avg
         self._overall_avg = (self._overall_avg + self.new_overall_avg())/2
-        #print("in set_overall_avg: overall avg = ", self._overall_avg)
 
     def get_overall_avg(self):
         return self._overall_avg
@@ -139,10 +148,10 @@ class User_Stats:
         """
         #print("entering set_difference")
         self._difference = Difference(abs(self._old_red_avg) - abs(self._red_avg),
-                                     abs(self._old_blue_avg) - abs(self._blue_avg),
-                                     abs(self._old_green_avg) - abs(self._green_avg),
-                                     abs(self._old_purple_avg) - abs(self._purple_avg),
-                                     abs(self._old_yellow_avg) - abs(self._yellow_avg))
+                                      abs(self._old_blue_avg) - abs(self._blue_avg),
+                                      abs(self._old_green_avg) - abs(self._green_avg),
+                                      abs(self._old_purple_avg) - abs(self._purple_avg),
+                                      abs(self._old_yellow_avg) - abs(self._yellow_avg))
 
     def get_difference(self):
         return self._difference
@@ -155,17 +164,13 @@ class User_Stats:
 
     def get_scale_points(self, userList) :
         """Returns a list of four points which represent the boundaries of the user scale"""
-        #print("userList = ", userList)
         sortedList = sorted(userList)
 
         if len(sortedList) == 0:            # if the list is empty
-            #print("empty grip list in get_scale_points()")
             return [0,0,0,0]
         IQR = self.quartiles(sortedList)
         minimum = sortedList[0]
         maximum = sortedList[len(sortedList)-1]
-        print('In get_scale_points(), Minimum = {} Q1 = {} Q2 = {} Maximum = {}'.format(minimum,IQR[0],
-                                                                                        IQR[1], maximum))
         pointsList = [minimum, IQR[0], IQR[1], maximum]
         return pointsList
 
@@ -178,8 +183,6 @@ class User_Stats:
         for i in sortedList:
             if scale[2] <= i <= scale[3]:
                 temp_list.append(i)
-        #print("scale is between {} and {}".format(scale[2], scale[3]))
-        #print("over_all_avg = ", self.new_overall_avg())
         scale = self.get_scale_points(temp_list)
         if scale[2] <= self.new_overall_avg() <= scale[3]:
             return 1
@@ -196,8 +199,6 @@ class User_Stats:
         for i in sortedList:
             if scale[0] <= i <= scale[1]:
                 temp_list.append(i)
-        #print("scale is between {} and {}".format(scale[0], scale[1]))
-        #print("over_all_avg = ", self.new_overall_avg())
         scale = self.get_scale_points(temp_list)
         if scale[2] <= self.new_overall_avg() <= scale[3]:
             return 3
@@ -229,9 +230,12 @@ if __name__ == '__main__':
     test = User_Stats()
     test.set_grips(test_info)
     print()
-    print("new values: {}, {}, {}, {}, {}, {}".format(test._red_avg,test._blue_avg, test._green_avg, test._purple_avg, test._yellow_avg, test._overall_avg))
+    print("new values: {}, {}, {}, {}, {}, {}".format(
+        test._red_avg,test._blue_avg, test._green_avg, test._purple_avg, test._yellow_avg, test._overall_avg))
     print("_difference = ", test._difference)
-    print("old values: {}, {}, {}, {}, {}, {}".format(test._old_red_avg,test._old_blue_avg, test._old_green_avg, test._old_purple_avg, test._old_yellow_avg, test._old_overall_avg))
+    print("old values: {}, {}, {}, {}, {}, {}".format(
+        test._old_red_avg,test._old_blue_avg, test._old_green_avg,
+        test._old_purple_avg, test._old_yellow_avg, test._old_overall_avg))
     print("test 1 = " + test.select_feedback())
     for t in [1,2,3,4,5]:
         print("t= {}; avg= {}; old_avg= {}".format(int(t), test.get_grip_avg(t), test.get_old_grip_avg(t)))
